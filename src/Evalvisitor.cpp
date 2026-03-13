@@ -194,6 +194,20 @@ std::any EvalVisitor::visitExpr_stmt(Python3Parser::Expr_stmtContext *ctx) {
         } else if (op == "*=") {
             if (leftValue.type == ValueType::INT && rightValue.type == ValueType::INT) {
                 result = Value::makeInt(leftValue.intVal * rightValue.intVal);
+            } else if (leftValue.type == ValueType::STRING && rightValue.type == ValueType::INT) {
+                std::string repeated;
+                long long count = rightValue.intVal.toDouble();
+                for (long long j = 0; j < count; ++j) {
+                    repeated += leftValue.stringVal;
+                }
+                result = Value::makeString(repeated);
+            } else if (leftValue.type == ValueType::INT && rightValue.type == ValueType::STRING) {
+                std::string repeated;
+                long long count = leftValue.intVal.toDouble();
+                for (long long j = 0; j < count; ++j) {
+                    repeated += rightValue.stringVal;
+                }
+                result = Value::makeString(repeated);
             } else {
                 double l = (leftValue.type == ValueType::FLOAT) ? leftValue.floatVal : leftValue.intVal.toDouble();
                 double r = (rightValue.type == ValueType::FLOAT) ? rightValue.floatVal : rightValue.intVal.toDouble();

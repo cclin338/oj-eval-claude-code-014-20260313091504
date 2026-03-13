@@ -88,14 +88,26 @@ std::any EvalVisitor::visitFuncdef(Python3Parser::FuncdefContext *ctx) {
         auto params = paramsList->tfpdef();
         auto tests = paramsList->test();
 
-        for (size_t i = 0; i < params.size(); ++i) {
-            func.paramNames.push_back(params[i]->NAME()->getText());
-            // Check if there's a default value
-            if (i < tests.size() && tests[i]) {
-                Value defaultVal = std::any_cast<Value>(visit(tests[i]));
-                func.defaultValues.push_back(defaultVal);
-            } else {
+        // In Python, parameters without defaults must come before those with defaults
+        // If there are N parameters and M tests,
+        // the first (N-M) parameters have no defaults,
+        // and the last M parameters use the M tests as defaults in order
+        size_t numParams = params.size();
+        size_t numDefaults = tests.size();
+        size_t numWithoutDefaults = numParams - numDefaults;
+
+        for (size_t i = 0; i < numParams; ++i) {
+            std::string paramName = params[i]->NAME()->getText();
+            func.paramNames.push_back(paramName);
+
+            if (i < numWithoutDefaults) {
+                // No default value
                 func.defaultValues.push_back(Value::makeNone());
+            } else {
+                // Has default value
+                size_t defaultIdx = i - numWithoutDefaults;
+                Value defaultVal = std::any_cast<Value>(visit(tests[defaultIdx]));
+                func.defaultValues.push_back(defaultVal);
             }
         }
     }
